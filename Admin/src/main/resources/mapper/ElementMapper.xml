@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.eap.admin.mapper.ElementMapper" >
+  <resultMap id="BaseResultMap" type="com.eap.admin.entity.Element" >
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" property="id" jdbcType="VARCHAR" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="uri" property="uri" jdbcType="VARCHAR" />
+    <result column="menu_id" property="menuId" jdbcType="VARCHAR" />
+    <result column="method" property="method" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user" property="createUser" jdbcType="VARCHAR" />
+    <result column="create_name" property="createName" jdbcType="VARCHAR" />
+    <result column="create_host" property="createHost" jdbcType="VARCHAR" />
+  </resultMap>
+
+  <select id="selectElementsByUserId" resultMap="BaseResultMap">
+    select distinct e.* from  base_role_resource rr
+    left join base_element e on rr.resource_id=e.id
+    left join base_role_user ru on ru.role_id=rr.role_id
+    left join base_role r on r.id=ru.role_id
+    where rr.resource_type='element' and r.enabled='1' and ru.user_id=#{userId}
+  </select>
+
+  <select id="selectElementsByUserIdAndMenuId" resultMap="BaseResultMap">
+    select distinct e.* from  base_role_resource rr
+    left join base_element e on rr.resource_id=e.id
+    left join base_role_user ru on ru.role_id=rr.role_id
+    left join base_role r on r.id=ru.role_id
+    where rr.resource_type='element' and r.enabled='1' and ru.user_id=#{userId} and e.menuId=#{menuId}
+  </select>
+
+  <select id="selectElementsByMenuId" resultMap="BaseResultMap">
+    SELECT * FROM base_element where menu_id =#{menuId}
+  </select>
+
+</mapper>

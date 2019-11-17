@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.admin.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="com.eap.admin.entity.User">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="password" jdbcType="VARCHAR" property="password"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="birthday" jdbcType="VARCHAR" property="birthday"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="mobile_phone" jdbcType="VARCHAR" property="mobilePhone"/>
+        <result column="tel_phone" jdbcType="VARCHAR" property="telPhone"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="sex" jdbcType="CHAR" property="sex"/>
+        <result column="type" jdbcType="CHAR" property="type"/>
+        <result column="status" jdbcType="CHAR" property="status"/>
+        <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_user" jdbcType="VARCHAR" property="createUser"/>
+        <result column="create_name" jdbcType="VARCHAR" property="createName"/>
+        <result column="create_host" jdbcType="VARCHAR" property="createHost"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="update_user" jdbcType="VARCHAR" property="updateUser"/>
+        <result column="update_name" jdbcType="VARCHAR" property="updateName"/>
+        <result column="update_host" jdbcType="VARCHAR" property="updateHost"/>
+    </resultMap>
+
+    <!--角色关联的用户-->
+    <select id="selectUsersWithRoleId" resultMap="BaseResultMap">
+        select u.* from base_user u
+        left join base_role_user ru on ru.user_id = u.id
+        where ru.role_id = #{roleId}
+        <if test="name!=null">
+            and (u.name like CONCAT(CONCAT('%', #{name}),'%') or u.username like CONCAT(CONCAT('%', #{name}),'%'))
+        </if>
+    </select>
+
+    <!-- 未关联角色的用户-->
+    <select id="selectUsersWithoutRoleId" resultMap="BaseResultMap">
+        select u.* from base_user u
+        left join (select * from base_role_user where role_id=#{roleId}) ru on u.id=ru.user_id
+        where ru.user_id is null
+        <if test="name!=null">
+            and (u.name like CONCAT(CONCAT('%', #{name}),'%') or u.username like CONCAT(CONCAT('%', #{name}),'%'))
+        </if>
+    </select>
+
+    <insert id="insertOrgUser" parameterType="map">
+        insert base_user_org (id,org_id,user_id ) VALUES (#{id},#{orgId},#{userId})
+    </insert>
+    <select id="selectUserById" parameterType="string" resultType="com.eap.admin.entity.User">
+        SELECT u.*,group_concat(o.org_id) as corgId,group_concat(bo.name) as corg
+        FROM  base_user u
+        LEFT JOIN base_user_org o ON o.user_id = u.id
+        LEFT JOIN base_org bo on o.org_id = bo.id
+        where u.id = #{0}
+    </select>
+
+    <delete id="deleteRlOrgByUid" parameterType="string">
+      DELETE  FROM  base_user_org where user_id = #{0}
+    </delete>
+
+    <select id="getUsersByProjectId" resultMap="BaseResultMap">
+        select u.*
+        from base_user u
+        left join p_project_user p on p.user_id = u.id
+        WHERE p.deleted = 'N' and p.project_id = #{projectId}
+    </select>
+  <select id="selectByProId" resultMap="BaseResultMap">
+      select u.* from base_user u join p_project_user p on p.user_id = u.id
+      where p.project_id = #{projectId} AND p.deleted = 'N'
+      <if test=" name != null and name !='' ">
+        and (u.name like CONCAT(CONCAT('%', #{name}),'%') or u.username like CONCAT(CONCAT('%', #{name}),'%'))
+      </if>
+  </select>
+
+  <!--没有此项目的用户-->
+  <select id="selectUserNoPro" resultMap="BaseResultMap">
+    select u.* from base_user u left join
+      (select user_id from p_project_user where project_id=#{projectId}) p  on p.user_id = u.id
+        where p.user_id is null
+          <if test="name!=null and name!=''">
+            and (u.name like CONCAT(CONCAT('%', #{name}),'%') or u.username like CONCAT(CONCAT('%', #{name}),'%'))
+          </if>
+  </select>
+
+    <select id="selectUserByUProId" parameterType="map" resultMap="BaseResultMap">
+        select u.* from base_user u join p_project_user p on p.user_id = u.id
+        where p.project_id = #{projectId}  and p.user_id = #{userId} and p.deleted = 'Y'
+    </select>
+
+    <select id="selectUsersByProjectIdN" resultMap="BaseResultMap">
+        select u.*
+        from base_user u
+        left join p_project_user p on p.user_id = u.id
+        WHERE p.project_id = #{projectId} and deleted='Y'
+        <if test="name!=null and name!=''">
+            and (u.name like CONCAT(CONCAT('%', #{name}),'%') or u.username like CONCAT(CONCAT('%', #{name}),'%'))
+        </if>
+    </select>
+
+    <select id="selectByProjectId" resultType="java.lang.Integer">
+        select count(p.id)
+        from p_project_user p
+        WHERE p.project_id = #{projectId} and p.user_id = #{userId}
+    </select>
+</mapper>

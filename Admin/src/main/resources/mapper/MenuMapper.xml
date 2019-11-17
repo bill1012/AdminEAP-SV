@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.admin.mapper.MenuMapper">
+  <resultMap id="BaseResultMap" type="com.eap.admin.entity.Menu">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="levelcode" jdbcType="VARCHAR" property="levelcode" />
+    <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+    <result column="href" jdbcType="VARCHAR" property="href" />
+    <result column="component" jdbcType="VARCHAR" property="component" />
+    <result column="icon" jdbcType="VARCHAR" property="icon" />
+    <result column="type" jdbcType="CHAR" property="type" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="enabled" jdbcType="CHAR" property="enabled" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="create_user" jdbcType="VARCHAR" property="createUser" />
+    <result column="create_name" jdbcType="VARCHAR" property="createName" />
+    <result column="create_host" jdbcType="VARCHAR" property="createHost" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="update_user" jdbcType="VARCHAR" property="updateUser" />
+    <result column="update_name" jdbcType="VARCHAR" property="updateName" />
+    <result column="update_host" jdbcType="VARCHAR" property="updateHost" />
+  </resultMap>
+
+  <select id="selectMaxLevelCodeByParentId" resultType="string">
+    select max(levelcode) from base_menu where parent_id=#{parentId}
+  </select>
+
+  <select id="selectMenusByUserId" resultMap="BaseResultMap">
+    select distinct e.* from  base_role_resource rr
+    left join base_menu e on rr.resource_id=e.id
+    left join base_role_user ru on ru.role_id=rr.role_id
+    left join base_role r on r.id=ru.role_id
+    where rr.resource_type='menu' and r.enabled='1' and ru.user_id= #{userId}
+  </select>
+
+</mapper>

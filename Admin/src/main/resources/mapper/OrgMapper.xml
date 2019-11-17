@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.admin.mapper.OrgMapper">
+    <resultMap id="BaseResultMap" type="com.eap.admin.entity.Org">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="level_code" jdbcType="VARCHAR" property="levelCode"/>
+        <result column="org_type" jdbcType="VARCHAR" property="orgType"/>
+        <result column="deleted" jdbcType="CHAR" property="deleted"/>
+        <result column="note" jdbcType="VARCHAR" property="note"/>
+        <result column="parentid" jdbcType="VARCHAR" property="parentid"/>
+    </resultMap>
+
+
+    <select id="getOrgTree" parameterType="com.eap.admin.entity.Org" resultType="map">
+        SELECT * from base_org
+        where deleted = 'N'
+        <if test="parentid != '' and parentid != null ">
+            AND parentid = #{parentid}
+        </if>
+    </select>
+
+    <select id="getOrgByPIDToMap" parameterType="string" resultType="map">
+        select b.id,b.name,b.code,b.level_code,b.org_type,b.deleted,b.note,b.parentid, if(b.parentid = '0', '无上级机构',o.name ) AS parentName from base_org b LEFT JOIN  base_org o ON b.parentid = o.id
+        where b.parentid = #{pid} and b.deleted = 'N'
+    </select>
+
+    <select id="getLevelCodeByParentId" parameterType="string" resultType="string">
+        select max(level_code) from base_org where parentid = #{0}
+    </select>
+    <select id="checkCode" parameterType="com.eap.admin.entity.Org" resultType="map">
+        SELECT * FROM base_org where code = #{code}
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+    </select>
+</mapper>

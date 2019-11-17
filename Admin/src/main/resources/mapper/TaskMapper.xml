@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.project.mapper.TaskMapper">
+  <resultMap id="BaseResultMap" type="com.eap.project.entity.Task">
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="project_id" jdbcType="VARCHAR" property="projectId" />
+    <result column="stage_id" jdbcType="VARCHAR" property="stageId" />
+    <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+    <result column="deleted" jdbcType="VARCHAR" property="deleted" />
+    <result column="finished" jdbcType="VARCHAR" property="finished" />
+    <result column="finished_user_id" jdbcType="VARCHAR" property="finishedUserId" />
+    <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
+    <result column="end_time" jdbcType="TIMESTAMP" property="endTime" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="create_user" jdbcType="VARCHAR" property="createUser" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="update_user" jdbcType="VARCHAR" property="updateUser" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="dict_priority" jdbcType="VARCHAR" property="dictPriority" />
+    <result column="sort" jdbcType="VARCHAR" property="sort" />
+  </resultMap>
+  <insert id="insertTaskUser" parameterType="java.util.Map">
+    insert into p_task_user (id,task_id,user_id,dict_type) values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.id},#{item.taskId},#{item.userId},#{item.dictType})
+    </foreach>
+  </insert>
+
+  <select id="getTaskExecutorIdById" resultType="java.lang.String" parameterType="com.eap.project.entity.Task">
+    select user_id from p_task_user where dict_type = '1' and deleted = 'N' and task_id = #{id}
+  </select>
+
+  <select id="getTaskParticipatorIds" resultType="java.lang.String" parameterType="com.eap.project.entity.Task">
+    select user_id from p_task_user where dict_type = '2' and deleted = 'N' and task_id = #{id}
+  </select>
+
+  <update id="updateExecutorTaskUser" parameterType="java.util.Map">
+    update p_task_user set user_id = #{user_id} where task_id = #{task_id} and dict_type = '1' and deleted = 'N'
+  </update>
+
+  <update id="deleteTaskUser" parameterType="java.lang.String">
+    update p_task_user set deleted = 'Y' where task_id = #{taskId} and dict_type = 2
+  </update>
+
+  <delete id="deleteByProjectId">
+    delete from  p_task  where project_id=#{projectId}
+  </delete>
+
+  <delete id="deleteTaskUserById">
+    delete from  p_task_user  where task_id=#{taskId}
+  </delete>
+
+  <select id="getCountTaskUserByProjectId"  resultType="java.util.Map">
+  select count(pt.name) value,ifnull(bu.name,'待认领') name from p_task pt
+  left join  p_task_user ptu on ptu.task_id = pt.id
+  left join base_user bu on ptu.user_id=bu.id
+  where pt.project_id =#{projectId} and ptu.dict_type=1 group by bu.name
+  </select>
+  <select id="getTaskListVoByExample"  resultType="com.eap.project.vo.TaskListVo">
+    SELECT  pt.* ,ps.name stageName, pt.end_time endTimeStr , bu.name  userName,ptu.user_id userId,bu.header FROM p_task pt
+    left join p_stage ps on pt.stage_id = ps.id
+    left join p_task_user ptu on ptu.task_id=pt.id
+    left join base_user bu on ptu.user_id=bu.id
+    where pt.project_id=#{projectId}
+      <if test="userId != null and userId != '' " >
+        and ptu.user_id=#{userId}
+      </if>
+      <if test="finished != null and finished != '' " >
+        and pt.finished=#{finished}
+      </if>
+      <if test="endTimeStr != null and endTimeStr != '' " >
+        and to_days(pt.end_time) = to_days(#{endTimeStr})
+      </if>
+        and  dict_type=1
+    order by ps.sort, pt.sort
+  </select>
+  <select id="getCountDayTaskByProjectId"  resultType="java.util.Map">
+    SELECT
+      value , MAX(name) name
+    FROM
+      (SELECT DISTINCT
+         (DATE_FORMAT(a.create_time, '%Y-%m-%d')) value,
+         (SELECT
+            COUNT(name)
+          FROM
+            p_task
+          WHERE
+            project_id = #{projectId}
+            AND create_time BETWEEN (a.create_time - INTERVAL (SELECT
+                                                                 DATEDIFF(NOW(), MIN(create_time)) + 1
+                                                               FROM
+                                                                 p_task) DAY) AND a.create_time) AS name
+       FROM
+         p_task a
+       WHERE
+         a.project_id = #{projectId}) bb GROUP BY value
+  </select>
+
+  <select id="getCountDayTaskByProjectIdTimes"  resultType="java.lang.Integer">
+    select count(*) from p_task where  project_id = #{projectId} and create_time &lt;= str_to_date(#{times},'%Y-%m-%d') + 1
+  </select>
+
+  <select id="getSortByStageId" resultType="java.lang.String">
+    select ifnull(max(t.sort), concat(s.sort, '000000')) as sort
+    from p_stage s
+    left join p_task t on s.id = t.stage_id
+    where s.id = #{stageId}
+  </select>
+
+  <select id="getTaskByUserId" resultType="java.lang.Integer">
+    select count(id) from p_task
+    where deleted = 'N' and finished_user_id = #{userId} and project_id = #{projectId}
+  </select>
+
+  <select id="getTaskByUserId2" resultType="java.lang.Integer">
+    select count(tu.id) from p_task_user tu join p_task t on tu.task_id = t.id where project_id =#{projectId} and user_id = #{userId}
+  </select>
+
+  <update id="updateTaskGeSort" parameterType="java.lang.String">
+    UPDATE p_task
+    SET sort = CONCAT(SUBSTR(sort, 1, 6), LPAD(CAST(SUBSTR(sort, 7) + 1 AS CHAR), 6, 0))
+    WHERE sort LIKE concat(substr(#{sort},1,6),'%')
+    AND sort >= #{sort}
+  </update>
+
+
+  <select id="getCountDayCompTaskByProjectId"  resultType="java.util.Map">
+    SELECT
+    a.name, SUM(lt.value) AS value
+    FROM
+    (SELECT
+    COUNT(bb.name) value, bb.create_time name
+    FROM
+    (SELECT
+    pt.project_id,
+    pt.name,
+    pr.task_id,
+    pr.content,
+    DATE_FORMAT(MAX(pr.create_time), '%Y-%m-%d') create_time
+    FROM
+    p_record pr
+    LEFT JOIN p_task pt ON pt.id = pr.task_id
+    WHERE
+    pt.project_id = #{projectId}
+    AND pt.finished = 'Y'
+    AND pr.content = '完成了任务'
+    GROUP BY pr.task_id) bb
+    GROUP BY bb.create_time) a
+    JOIN
+    (SELECT
+    COUNT(bb.name) value, bb.create_time name
+    FROM
+    (SELECT
+    pt.project_id,
+    pt.name,
+    pr.task_id,
+    pr.content,
+    DATE_FORMAT(MAX(pr.create_time), '%Y-%m-%d') create_time
+    FROM
+    p_record pr
+    LEFT JOIN p_task pt ON pt.id = pr.task_id
+    WHERE
+    pt.project_id = #{projectId}
+    AND pt.finished = 'Y'
+    AND pr.content = '完成了任务'
+    GROUP BY pr.task_id) bb
+    GROUP BY bb.create_time) lt ON a.name >= lt.name
+    GROUP BY a.name
+    ORDER BY a.name
+  </select>
+
+  <select id="getCountDayCompTaskByProjectIdTimes"  resultType="java.lang.Integer">
+    select ifnull(max(value),0)  from
+    (SELECT
+    COUNT(bb.name) value, bb.create_time name
+    FROM
+    (SELECT
+    pt.project_id,
+    pt.name,
+    pr.task_id,
+    pr.content,
+    DATE_FORMAT(MAX(pr.create_time), '%Y-%m-%d') create_time
+    FROM
+    p_record pr
+    LEFT JOIN p_task pt ON pt.id = pr.task_id
+    WHERE
+    pt.project_id = #{projectId}
+    AND pt.finished = 'Y'
+    AND pr.content = '完成了任务'
+    GROUP BY pr.task_id) bb
+    GROUP BY bb.create_time)ss where ss.name &lt;= #{times}
+  </select>
+
+  <select id="getCountDairenlingByProjectId"  resultType="java.lang.Integer">
+    SELECT
+      COUNT(*)
+    FROM
+      p_task pt
+      LEFT JOIN
+      p_task_user ptu ON pt.id = ptu.task_id
+    WHERE
+      pt.project_id = #{projectId}
+      AND ptu.dict_type = '1'
+      AND ptu.user_id = 'dairenling'
+      AND pt.deleted='N'
+      AND ptu.deleted='N'
+  </select>
+  <select id="getCountFinishedByProjectId"  resultType="java.lang.Integer">
+  SELECT
+  COUNT(*)
+  FROM
+  p_task pt
+  LEFT JOIN
+  p_task_user ptu ON pt.id = ptu.task_id
+  WHERE
+  pt.project_id = #{projectId}
+  AND ptu.dict_type = '1'
+  AND pt.finished = 'Y'
+  AND pt.deleted='N'
+  AND ptu.deleted='N'
+  </select>
+  <select id="getCountUnFinishedByProjectId"  resultType="java.lang.Integer">
+    SELECT
+    COUNT(*)
+    FROM
+    p_task pt
+    LEFT JOIN
+    p_task_user ptu ON pt.id = ptu.task_id
+    WHERE
+    pt.project_id = #{projectId}
+    AND ptu.dict_type = '1'
+    AND pt.finished = 'N'
+    AND pt.deleted='N'
+    AND ptu.deleted='N'
+  </select>
+
+</mapper>

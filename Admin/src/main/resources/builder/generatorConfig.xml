@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    <!--
+    Running MyBatis Generator With Java: com.eap.common.mybatis.generator.EntityGenerator
+    如果需要用：mybatis-generator:generate，需要注意：
+    1.<useMapperCommentGenerator>值改为true或直接注释
+    2.<commentGenerator> 注释掉
+    3.pom.xml中mybatis-generator-maven-plugin注释取消
+    -->
+    <context id="mysql" targetRuntime="MyBatis3Simple" defaultModelType="flat">
+        <property name="beginningDelimiter" value="`"/>
+        <property name="endingDelimiter" value="`"/>
+        <property name="useMapperCommentGenerator" value="false"/>
+
+        <plugin type="tk.mybatis.mapper.generator.MapperPlugin">
+            <property name="mappers" value="tk.mybatis.mapper.common.Mapper"/>
+        </plugin>
+
+        <commentGenerator type="com.eap.common.mybatis.generator.EntityCommentGenerator"/>
+
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/eap-admin?useUnicode=true&amp;characterEncoding=UTF8&amp;useInformationSchema=true&amp;useSSL=false"
+                        userId="root"
+                        password="123456" />
+
+        <javaModelGenerator targetPackage="com.eap.admin.entity" targetProject="src/main/java"/>
+        <!--<javaModelGenerator targetPackage="${targetModelPackage}" targetProject="${targetJavaProject}"/>-->
+
+        <sqlMapGenerator targetPackage="mapper" targetProject="src/main/resources"/>
+        <!--<sqlMapGenerator targetPackage="${targetXMLPackage}" targetProject="${targetResourcesProject}"/>-->
+
+        <javaClientGenerator type="XMLMAPPER" targetPackage="com.eap.admin.mapper"
+                             targetProject="src/main/java"/>
+        <!--<javaClientGenerator type="XMLMAPPER" targetPackage="${targetMapperPackage}"-->
+        <!--targetProject="${targetJavaProject}"/>-->
+
+        <!--<table tableName="base_user" domainObjectName="User">-->
+            <!--<property name="author" value="鬼王"/>-->
+            <!--&lt;!&ndash; rootClass可以配置在<javaModelGenerator>中作为全局超类， &ndash;&gt;-->
+            <!--<property name="rootClass" value="com.eap.common.entity.BaseEntity"/>-->
+            <!--<generatedKey column="id" identity="true" sqlStatement="MySql"/>-->
+        <!--</table>-->
+        <table tableName="p_project" domainObjectName="Project"/>
+        <table tableName="p_record" domainObjectName="Record"/>
+        <table tableName="p_stage" domainObjectName="Stage"/>
+        <table tableName="p_task" domainObjectName="Task"/>
+        <!--<table tableName="base_dict" domainObjectName="Dict">-->
+            <!--<property name="author" value="鬼王"/>-->
+            <!--<generatedKey column="id" identity="true" sqlStatement="MySql"/>-->
+        <!--</table>-->
+    </context>
+</generatorConfiguration>

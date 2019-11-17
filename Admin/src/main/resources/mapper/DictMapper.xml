@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.admin.mapper.DictMapper">
+  <resultMap id="BaseResultMap" type="com.eap.admin.entity.Dict">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+    <result column="level_code" jdbcType="VARCHAR" property="levelCode" />
+    <result column="enabled" jdbcType="CHAR" property="enabled" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="value" jdbcType="VARCHAR" property="value" />
+    <result column="lspell" jdbcType="VARCHAR" property="lspell" />
+    <result column="uspell" jdbcType="VARCHAR" property="uspell" />
+    <result column="initials" jdbcType="VARCHAR" property="initials" />
+  </resultMap>
+
+
+
+    <select id="getDictByPIDToMap" parameterType="string" resultType="map">
+       select b.id,b.name,b.code,b.level_code as levelCode,b.parent_id as parentId, if(b.parent_id = '0', '无上级机构',o.name ) AS parentName,b.lspell,b.uspell,b.initials,b.enabled,b.value,b.description from base_dict b LEFT JOIN  base_dict o ON b.parent_id = o.id
+       where b.parent_id = #{pid}
+    </select>
+
+    <select id="getLevelCodeByParentId" parameterType="string" resultType="string">
+        select max(level_code) from base_dict where parent_id = #{0}
+    </select>
+    <select id="checkCode" parameterType="com.eap.admin.entity.Dict" resultType="map">
+        SELECT * FROM base_dict where  code = #{code}
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+    </select>
+    <select id="getDictByCodeToMap" parameterType="string" resultType="map">
+        select b.id ,b.name  from base_dict b LEFT JOIN  base_dict o ON b.parent_id = o.id LEFT JOIN base_dict a ON a.code = o.code
+        where a.code = #{code}
+    </select>
+</mapper>

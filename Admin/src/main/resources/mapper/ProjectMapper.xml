@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eap.project.mapper.ProjectMapper">
+  <resultMap id="BaseResultMap" type="com.eap.project.entity.Project">
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="dict_status" jdbcType="VARCHAR" property="dictStatus" />
+    <result column="sort" jdbcType="INTEGER" property="sort" />
+    <result column="dict_type" jdbcType="VARCHAR" property="dictType" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="create_user" jdbcType="VARCHAR" property="createUser" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="update_user" jdbcType="VARCHAR" property="updateUser" />
+  </resultMap>
+
+  <select id="selectVoByExample" resultType="com.eap.project.vo.ProjectVo">
+    select
+      p.id,p.name,p.description,p.logo,p.dict_status as dictStatus, p.sort,p.dict_type as dictType,
+      p.create_time as createTime,p.update_time as updateTime,p.create_user as createUser,p.update_user as updateUser,
+      d.name as status, bd.name as type, u.name as createUserName, bu.name as updateUserName
+      from p_project p
+      left join base_dict d
+      on p.dict_status = d.id
+      left join base_dict bd
+      on p.dict_type = bd.id
+      left join base_user u
+      on p.create_user = u.id
+      left join base_user bu
+      on p.update_user = bu.id
+      left join p_project_user pu
+      on pu.project_id = p.id
+    where pu.user_id = #{queryUserId} and pu.deleted = 'N'
+    <if test="name != null and name != '' " >
+      and p.name like #{name}
+    </if>
+    <if test="dictType != null and dictType != '' " >
+      and p.dict_type = #{dictType}
+    </if>
+    <if test="dictStatus != null and dictStatus != '' " >
+      and p.dict_status like #{dictStatus}
+    </if>
+    order by sort
+  </select>
+
+  <delete id="deleteUserByProject">
+    delete from  p_project_user   where project_id=#{id}
+  </delete>
+
+  <insert id="insertProUser" parameterType="java.util.List">
+    insert into p_project_user(id,user_id,project_id,deleted,create_time,create_user) values
+    <foreach collection="list" item="item" index="index" separator=",">
+        ( #{item.id,jdbcType=VARCHAR},
+          #{item.userId,jdbcType=VARCHAR},
+          #{item.projectId,jdbcType=VARCHAR},
+          #{item.deleted,jdbcType=VARCHAR},
+          #{item.createTime,jdbcType=TIMESTAMP},
+          #{item.createUser,jdbcType=VARCHAR}
+        )
+    </foreach>
+  </insert>
+  <insert id="insertProjectUser" parameterType="java.util.Map">
+    insert into p_project_user(id,user_id,project_id,deleted,create_time,create_user) values
+      ( #{map.id,jdbcType=VARCHAR},
+      #{map.userId,jdbcType=VARCHAR},
+      #{map.projectId,jdbcType=VARCHAR},
+      #{map.deleted,jdbcType=VARCHAR},
+      #{map.createTime,jdbcType=TIMESTAMP},
+      #{map.createUser,jdbcType=VARCHAR}
+      )
+  </insert>
+  <!-- 删除中间表信息->deleted逻辑修改 -->
+  <update id="delProUser">
+    update  p_project_user set deleted = 'Y'  where project_id=#{projectId} and user_id=#{userId}
+  </update>
+
+  <update id="updateProUser">
+    update  p_project_user set deleted = 'N'  where project_id=#{projectId} and user_id=#{userId}
+  </update>
+
+  <select id="getProjectsByUserId" resultType="java.util.Map">
+    select pp.id,pp.name from p_project_user ppu
+      right join p_project pp
+        on ppu.project_id=pp.id where ppu.user_id=#{userId} and ppu.deleted = 'N'
+  </select>
+
+</mapper>

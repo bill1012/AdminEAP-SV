@@ -1,0 +1,82 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: eap-admin
+  security:
+    user:
+      password: 123456
+      roles:
+        - USER
+        - ADMIN
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  datasource:
+    name: mysql-admin
+#    url: jdbc:mysql://11.11.180.137:3306/eap-admin?useUnicode=true&characterEncoding=UTF8&useSSL=false
+    url: jdbc:mysql://localhost:3306/eap-admin?useUnicode=true&characterEncoding=UTF8&useSSL=false
+    username: root
+    password: MyNewPass4!
+#     使用druid数据源
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+    filters: stat
+    maxActive: 20
+    initialSize: 1
+    maxWait: 60000
+    minIdle: 1
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: select 'x'
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    maxOpenPreparedStatements: 20
+  redis:
+    database: 0
+    host: 127.0.0.1
+    password:
+    jedis:
+      pool:
+        max-idle: 8
+        max-active: 8
+        max-wait: 1
+
+mybatis:
+  mapper-package: com.eap.*.mapper
+  identity: SELECT REPLACE(UUID(), ''-'', '''')
+  order: BEFORE
+  wrap-keyword: '`{0}`'
+  mapper-locations:  classpath:mapper/**/*.xml
+  type-aliases-package: ${environments.package.base}.*.entity
+
+logging:
+  level:
+    com.eap: DEBUG
+    tk.mybatis: DEBUG
+
+environments:
+  package:
+    base: com.eap
+    admin: ${environments.package.base}.admin
+  jwt:
+    header: access-token
+    secert: Xe*g@1jda
+    expiration: 14400
+    out-expiration: 7200
+    key-username: sub
+    key-created: created
+  swagger:
+    service:
+      title: Enterprise Application Platform
+      description: An Enterprise Application Development Platform.
+      developers: billJiang, 鬼王
+  security:
+    ignore:
+      startWith: /jwt/token #不拦截的url
+      contains:  /swagger-ui.html,/webjars/,/swagger-resources,/v2/ #不拦截的url
+

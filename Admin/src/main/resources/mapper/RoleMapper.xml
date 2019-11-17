@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.eap.admin.mapper.RoleMapper">
+    <resultMap id="BaseResultMap" type="com.eap.admin.entity.Role">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="code" property="code" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="VARCHAR"/>
+        <result column="levelcode" property="levelcode" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="CHAR"/>
+        <result column="enabled" property="enabled" jdbcType="CHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user" property="createUser" jdbcType="VARCHAR"/>
+        <result column="create_name" property="createName" jdbcType="VARCHAR"/>
+        <result column="create_host" property="createHost" jdbcType="VARCHAR"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user" property="updateUser" jdbcType="VARCHAR"/>
+        <result column="update_name" property="updateName" jdbcType="VARCHAR"/>
+        <result column="update_host" property="updateHost" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="selectMaxLevelCodeByParentId" resultType="string">
+    select max(levelcode) from base_role where parent_id=#{parentId}
+  </select>
+
+    <delete id="deleteRoleUser">
+    delete from base_role_user where role_id=#{roleId} and user_id=#{userId}
+  </delete>
+
+    <delete id="batchDeleteRoleUser">
+        delete from base_role_user where role_id=#{roleId} and user_id in
+        <foreach collection="userIds" index="index" item="item" open="(" close=")" separator=",">
+            #item
+        </foreach>
+    </delete>
+
+    <insert id="insertRoleUser">
+        insert into base_role_user(id,role_id,user_id) values (#{id},#{roleId},#{userId})
+        <selectKey resultType="string" keyProperty="id" order="BEFORE">
+            select replace(uuid(),'-','')
+        </selectKey>
+    </insert>
+    <insert id="batchInsertRoleUser">
+        <!-- <selectKey resultType="long" keyProperty="id" order="AFTER">
+           SELECT
+           LAST_INSERT_ID()
+         </selectKey>-->
+        insert into base_role_user(role_id,user_id) values
+        <foreach collection="userIds" item="item" index="index" separator=",">
+            (#{roleId},#{item})
+        </foreach>
+    </insert>
+
+    <select id="selectRoleCodesByUserId" resultType="string">
+      select distinct r.code from base_role_user ru
+      left join base_role r on ru.role_id=r.id
+      where  ru.user_id=#{userId} and r.enabled='1'
+    </select>
+
+    <select id="selectRoleIdsByUserId" resultType="string">
+      select distinct r.id from base_role_user ru
+      left join base_role r on ru.role_id=r.id
+      where  ru.user_id=#{userId} and r.enabled='1'
+    </select>
+
+    <!--删除角色权限关联-->
+    <delete id="deleteByRoleIdAndResourceType">
+    delete from base_role_resource where role_id=#{roleId} and resource_type=#{resourceType}
+  </delete>
+
+    <delete id="deleteByRoleIdAndResourceId">
+    delete from base_role_resource where role_id=#{roleId} and resource_id=#{resourceId}
+  </delete>
+
+    <!--查找角色下的资源-->
+    <select id="selectResourceByRoleIdAndType" resultType="string">
+    select DISTINCT resource_id from base_role_resource where role_id=#{roleId} and resource_type=#{resourceType}
+  </select>
+
+    <insert id="insertResourceElement">
+        insert into base_role_resource(id,role_id,resource_id,parent_id,resource_type) values
+        (#{id},#{roleId},#{elementId},#{menuId},#{resourceType})
+        <selectKey resultType="string" keyProperty="id" order="BEFORE">
+            select replace(uuid(),'-','')
+        </selectKey>
+    </insert>
+
+    <insert id="insertResourceElements">
+        insert into base_role_resource(id,role_id,resource_id,parent_id,resource_type) values
+        <foreach collection="elementIds" item="elementId" index="index" separator=",">
+            (replace(uuid(),'-',''),#{roleId},#{elementId},#{menuId},#{resourceType})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByRoleIdAndParentId">
+        delete from base_role_resource where role_id=#{roleId} and parent_id=#{menuId}
+    </delete>
+
+    <insert id="insertResourceMenus">
+        insert into base_role_resource(id,role_id,resource_id,resource_type) values
+        <foreach collection="menuIds" item="menuId" index="index" separator=",">
+            (replace(uuid(),'-',''),#{roleId},#{menuId},#{resourceType})
+        </foreach>
+    </insert>
+
+    <delete id="deleteRoleResourceByResourceId">
+        delete from base_role_resource where resource_id=#{resourceId}
+    </delete>
+
+</mapper>
